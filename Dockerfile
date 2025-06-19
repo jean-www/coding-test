@@ -8,3 +8,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENTRYPOINT ["python3", "main.py"]
+
+# TODO: Remediation Lab with run as non-root

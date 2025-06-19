@@ -1,0 +1,11 @@
+FROM python:3.10-alpine
+
+# For https and parse scanning results
+RUN apk add --no-cache ca-certificates git
+
+# install scanners
+RUN pip install --no-cache-dir bandit checkov grype
+
+WORKDIR /src
+ENTRYPOINT ["sh", "-c"]
+
