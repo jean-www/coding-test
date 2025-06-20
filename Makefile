@@ -5,6 +5,9 @@ REPORT_DIR    := ./reports
 
 .PHONY: all prepare build-app build-scanner scan-base scan-code scan-dockerfile scan-image scan-all clean
 
+# IMPORTANT: Since this is a lab enviroment, when mounting with "-v" we are mounting EVERYTHING.
+# In a project, this should not be the case, since we only need to mount the necessary.
+
 all: scan-all
 # Ensure reports directory exists
 prepare:
@@ -23,7 +26,6 @@ build-scanner:
 scan-base: build-scanner
 	docker pull $(BASE_IMAGE)
 	docker run --rm \
-	  -v /var/run/docker.sock:/var/run/docker.sock \
 	  -v $(REPORT_DIR):/reports \
 	  $(SCANNER_IMAGE) \
 	  "grype $(BASE_IMAGE) -o table | tee /reports/base-grype.txt \
@@ -36,13 +38,13 @@ scan-code: build-scanner
 	  -v $(REPORT_DIR):/reports \
 	  $(SCANNER_IMAGE) \
 	  "ls -l /src \
-		&& bandit -r /src --exclude /src/.venv,/src/.git | tee /reports/bandit.txt \
+		&& bandit -r /src --exclude /src/.venv,/src/.git,/src/bandit-env | tee /reports/bandit.txt \
 		&& echo -e '\n==================================================END_BANDIT_SCAN==================================================\n'"
 
 
 scan-dockerfile: build-scanner
 	docker run --rm \
-	  -v $(shell pwd):/src \
+	  -v $(shell pwd):/src/ \
 	  -v $(REPORT_DIR):/reports \
 	  $(SCANNER_IMAGE) \
 		"checkov -f /src/Dockerfile --framework dockerfile | tee /reports/dockerfile-checkov.txt \
@@ -50,11 +52,12 @@ scan-dockerfile: build-scanner
 
 # 5. Scan the built app image with Grype
 scan-image: build-app build-scanner
+	docker save $(APP_IMAGE) -o image.tar
 	docker run --rm \
-	  -v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(shell pwd)/image.tar:/image.tar:ro \
 	  -v $(REPORT_DIR):/reports \
 	  $(SCANNER_IMAGE) \
-	  "grype $(APP_IMAGE) -o table | tee /reports/image-grype.json \
+	  "grype /image.tar -o table | tee /reports/image-grype.json \
 		&& echo -e '\n==================================================END_GRYPE_APP_SCAN==================================================\n'"
 
 # 6. Run everything in sequence, bail on first failure
