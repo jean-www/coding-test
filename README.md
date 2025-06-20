@@ -84,7 +84,7 @@ docker build -t weather-app:0.0.1 .
 
 ```bash
 docker run \
-  -v "$(pwd)/output":/app \
+  -v "$(pwd)":/app \
   -e OPENWEATHER_API_KEY="$OPENWEATHER_API_KEY" \
   -e WEATHERAPI_API_KEY="$WEATHERAPI_API_KEY" \
   weather-app:0.0.1
