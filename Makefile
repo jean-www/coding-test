@@ -1,5 +1,5 @@
-APP_IMAGE     := weather-app:latest
-SCANNER_IMAGE := weather-scanner:latest
+APP_IMAGE     := weather-app:0.0.1
+SCANNER_IMAGE := weather-scanner:0.0.1
 BASE_IMAGE    := python:3.10-alpine
 REPORT_DIR    := ./reports
 
@@ -21,7 +21,7 @@ build-scanner:
 
 # 3. Scan the base image before build
 scan-base: build-scanner
-	docker pull $(BASE_IMAGE) # ensure latest
+	docker pull $(BASE_IMAGE)
 	docker run --rm \
 	  -v /var/run/docker.sock:/var/run/docker.sock \
 	  -v $(REPORT_DIR):/reports \
@@ -29,7 +29,7 @@ scan-base: build-scanner
 	  "grype $(BASE_IMAGE) -o table | tee /reports/base-grype.txt \
 		&& echo -e '\n==================================================END_GRYPE_BASE_SCAN==================================================\n'"
 
-# 4. Scan your Python code with Bandit & Checkov
+# 4. Scan the Python code with Bandit
 scan-code: build-scanner
 	docker run --rm \
 	  -v $(shell pwd):/src \

@@ -55,25 +55,51 @@ pip install -r requirements.txt
 - The application fetches weather data for the following cities by default: London, New York, Tokyo, São Paulo, and Johannesburg. You can modify the `CITIES` list in `main.py` to include other cities.
 
 
-## Dockefile
+# Exection Steps
+
+## Dockerfile
 
 ### Export envs
+```bash
 export OPENWEATHER_API_KEY="your_openweather_api_key"
 export WEATHERAPI_API_KEY="your_weatherapi_api_key"
+```
 
 ### Test variables load in python3
+```bash
+python3
 import os
 assert os.getenv("OPENWEATHER_API_KEY"), "Missing OPENWEATHER_API_KEY"
 assert os.getenv("WEATHERAPI_API_KEY"),  "Missing WEATHERAPI_API_KEY"
 
 print(os.getenv("OPENWEATHER_API_KEY"))
 print(os.getenv("WEATHERAPI_API_KEY"))
+```
 
 ### Build image and run the code, exports the files in current directory.
-docker build -t weather-app .
+```bash
+docker build -t weather-app:0.0.1 .
 
+```
+
+```bash
 docker run \
   -v "$(pwd)/output":/app \
   -e OPENWEATHER_API_KEY="$OPENWEATHER_API_KEY" \
   -e WEATHERAPI_API_KEY="$WEATHERAPI_API_KEY" \
-  weather-app:latest
+  weather-app:0.0.1
+```
+
+## Makefile
+
+```bash
+make clear
+make scan-all
+make prepare
+make build-app
+make build-scanner
+make scan-base
+make scan-code
+make scan-dockerfile
+make scan-image
+```

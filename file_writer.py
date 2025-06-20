@@ -2,7 +2,7 @@ import os
 import csv
 import json
 
-def write_to_csv(data, filename="weather_data.csv"):
+def write_to_csv(data, filename="weather-app-output/weather_data.csv"):
     # TODO: Write or append to CSV with headers
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="", encoding="utf-8") as f:
@@ -12,7 +12,7 @@ def write_to_csv(data, filename="weather_data.csv"):
         writer.writerows(data)
 
 
-def write_to_json(data, filename="weather_data.json"):
+def write_to_json(data, filename="./weather-app-output/weather_data.json"):
     # TODO: Read existing JSON (if any), append data, and write back
     existing = []
     if os.path.isfile(filename):
