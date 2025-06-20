@@ -1,0 +1,64 @@
+APP_IMAGE     := weather-app:latest
+SCANNER_IMAGE := weather-scanner:latest
+BASE_IMAGE    := python:3.10-alpine
+REPORT_DIR    := ./reports
+
+.PHONY: all prepare build-app build-scanner scan-base scan-code scan-dockerfile scan-image scan-all clean
+
+all: scan-all
+# Ensure reports directory exists
+prepare:
+	@mkdir -p $(REPORT_DIR)
+
+
+# 1. Build the app image
+build-app:
+	docker build -t $(APP_IMAGE) .
+
+# 2. Build the scanner image
+build-scanner:
+	docker build -f Dockerfile.scanner -t $(SCANNER_IMAGE) .
+
+# 3. Scan the base image before build
+scan-base: build-scanner
+	docker pull $(BASE_IMAGE) # ensure latest
+	docker run --rm \
+	  -v /var/run/docker.sock:/var/run/docker.sock \
+	  -v $(REPORT_DIR):/reports \
+	  $(SCANNER_IMAGE) \
+	  "grype $(BASE_IMAGE) -o table | tee /reports/base-grype.txt \
+		&& echo -e '\n==================================================END_GRYPE_BASE_SCAN==================================================\n'"
+
+# 4. Scan your Python code with Bandit & Checkov
+scan-code: build-scanner
+	docker run --rm \
+	  -v $(shell pwd):/src \
+	  -v $(REPORT_DIR):/reports \
+	  $(SCANNER_IMAGE) \
+	  "ls -l /src \
+		&& bandit -r /src --exclude /src/.venv,/src/.git | tee /reports/bandit.txt \
+		&& echo -e '\n==================================================END_BANDIT_SCAN==================================================\n'"
+
+
+scan-dockerfile: build-scanner
+	docker run --rm \
+	  -v $(shell pwd):/src \
+	  -v $(REPORT_DIR):/reports \
+	  $(SCANNER_IMAGE) \
+		"checkov -f /src/Dockerfile --framework dockerfile | tee /reports/dockerfile-checkov.txt \
+		&& echo -e '\n==================================================END_CHECKOV_DOCKERFILE_SCAN==================================================\n'"
+
+# 5. Scan the built app image with Grype
+scan-image: build-app build-scanner
+	docker run --rm \
+	  -v /var/run/docker.sock:/var/run/docker.sock \
+	  -v $(REPORT_DIR):/reports \
+	  $(SCANNER_IMAGE) \
+	  "grype $(APP_IMAGE) -o table | tee /reports/image-grype.json \
+		&& echo -e '\n==================================================END_GRYPE_APP_SCAN==================================================\n'"
+
+# 6. Run everything in sequence, bail on first failure
+scan-all: scan-base scan-code scan-dockerfile scan-image
+
+clean:
+	rm -rf $(REPORT_DIR)/*

@@ -1,10 +1,13 @@
 FROM python:3.10-alpine
 
 # For https and parse scanning results
-RUN apk add --no-cache ca-certificates git
+RUN apk add --no-cache ca-certificates curl jq
 
 # install scanners
-RUN pip install --no-cache-dir bandit checkov grype
+RUN pip install --no-cache-dir bandit checkov
+
+RUN curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+ENV PATH="/usr/local/bin:${PATH}"
 
 WORKDIR /src
 ENTRYPOINT ["sh", "-c"]
