@@ -4,4 +4,5 @@ weather_data.*
 reports/
 .venv/
 *-env/
-image.tar
+*-env
+bandit-env/
